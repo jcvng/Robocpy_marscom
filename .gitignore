@@ -1,0 +1,6 @@
+# Windows / OS cruft
+Thumbs.db
+desktop.ini
+
+# Robocopy temp logs (written to %TEMP%, but never commit if one lands here)
+*.log
