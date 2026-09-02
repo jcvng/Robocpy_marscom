@@ -13,13 +13,17 @@ Destination for everything: `%USERPROFILE%\Dropbox\Marscom`.
 Both scripts print an end-of-run **CHANGE SUMMARY** with three sections: ADDED (`New File`),
 CHANGED (`Newer`), and REMOVED / EXTRA (`EXTRA File`), produced by grepping a temp robocopy log.
 
-## Sources (identical in both scripts, `SRC1`–`SRC5`)
+## Sources (identical in both scripts, `SRC1`–`SRC6`)
 
 1. `%USERPROFILE%\Documents` → `Documents`
 2. `%USERPROFILE%\.claude\skills` → `skills`
 3. `C:\Projects\Testing\GraveyardsMvc\Graveyards\Graveyards.Web\Properties\PublishProfiles` → `GraveyardsPublishProfiles`
 4. `%USERPROFILE%\Pictures` → `Pictures`
 5. `%USERPROFILE%\Videos` → `Videos`
+6. `%USERPROFILE%\.codex\skills` → `codex-skills`
+
+Note that sources 2 and 6 are different tools' skill folders (`.claude` vs `.codex`) and land in
+separate destinations (`skills` vs `codex-skills`) so they never merge.
 
 ## Conventions & gotchas
 

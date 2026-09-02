@@ -7,6 +7,7 @@ set "SRC2=%USERPROFILE%\.claude\skills"
 set "SRC3=C:\Projects\Testing\GraveyardsMvc\Graveyards\Graveyards.Web\Properties\PublishProfiles"
 set "SRC4=%USERPROFILE%\Pictures"
 set "SRC5=%USERPROFILE%\Videos"
+set "SRC6=%USERPROFILE%\.codex\skills"
 
 set "LOG=%TEMP%\BackupToDropoxSafe_%RANDOM%.log"
 if exist "%LOG%" del "%LOG%"
@@ -17,28 +18,33 @@ echo  ADDITIVE mode: nothing is ever deleted from Dropbox
 echo ==========================================
 echo.
 
-echo [1/5] Documents  -^>  %DEST%\Documents
+echo [1/6] Documents  -^>  %DEST%\Documents
 call :copy "%SRC1%" "%DEST%\Documents"
 if errorlevel 8 goto :failed
 
 echo.
-echo [2/5] .claude\skills  -^>  %DEST%\skills
+echo [2/6] .claude\skills  -^>  %DEST%\skills
 call :copy "%SRC2%" "%DEST%\skills"
 if errorlevel 8 goto :failed
 
 echo.
-echo [3/5] GraveyardsPublishProfiles  -^>  %DEST%\GraveyardsPublishProfiles
+echo [3/6] GraveyardsPublishProfiles  -^>  %DEST%\GraveyardsPublishProfiles
 call :copy "%SRC3%" "%DEST%\GraveyardsPublishProfiles"
 if errorlevel 8 goto :failed
 
 echo.
-echo [4/5] Pictures  -^>  %DEST%\Pictures
+echo [4/6] Pictures  -^>  %DEST%\Pictures
 call :copy "%SRC4%" "%DEST%\Pictures"
 if errorlevel 8 goto :failed
 
 echo.
-echo [5/5] Videos  -^>  %DEST%\Videos
+echo [5/6] Videos  -^>  %DEST%\Videos
 call :copy "%SRC5%" "%DEST%\Videos"
+if errorlevel 8 goto :failed
+
+echo.
+echo [6/6] .codex\skills  -^>  %DEST%\codex-skills
+call :copy "%SRC6%" "%DEST%\codex-skills"
 if errorlevel 8 goto :failed
 
 echo.
