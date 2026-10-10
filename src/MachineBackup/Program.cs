@@ -56,13 +56,17 @@ static async Task<int> RunAsync(string[] args)
         var root = ResolvePath(config.DestinationPath);
         var jobs = new List<(string Source, string Destination)>();
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var path in config.SourcePaths)
+        foreach (var entry in config.SourcePaths)
         {
-            var source = ResolvePath(path);
+            var source = ResolvePath(entry?.Path);
             if (!Directory.Exists(source)) throw new ArgumentException($"Source folder does not exist: {source}");
-            var name = Path.GetFileName(source);
-            if (string.IsNullOrEmpty(name)) throw new ArgumentException("Drive roots cannot be used as sources. Select a subfolder.");
-            if (!names.Add(name)) throw new ArgumentException($"Sources share the folder name '{name}'. Choose distinct folder names to prevent merging backups.");
+            // "As" overrides the folder's own name, so sources with the same leaf name
+            // (.claude\skills and .codex\skills) can land in distinct destinations.
+            var name = string.IsNullOrWhiteSpace(entry?.As) ? Path.GetFileName(source) : entry!.As!.Trim();
+            if (string.IsNullOrEmpty(name)) throw new ArgumentException("Drive roots cannot be used as sources. Select a subfolder, or set As.");
+            if (name.Intersect(Path.GetInvalidFileNameChars()).Any() || name is "." or "..")
+                throw new ArgumentException($"As must be a single folder name, not a path: '{name}'.");
+            if (!names.Add(name)) throw new ArgumentException($"Sources share the destination folder name '{name}'. Set As on one of them to prevent merging backups.");
             jobs.Add((source, Path.Combine(root, name)));
         }
         // Validate the entire plan before any copy, including cross-source overlap.
@@ -154,6 +158,63 @@ sealed class BackupSettings
 
 sealed class MachineSettings
 {
-    public string[]? SourcePaths { get; set; }
+    public BackupSource[]? SourcePaths { get; set; }
     public string? DestinationPath { get; set; }
+}
+
+/// <summary>
+/// A source folder, optionally with an explicit destination folder name. Without
+/// <see cref="As"/> the destination takes the source folder's own name, which cannot
+/// express two sources sharing a leaf name (".claude\skills" and ".codex\skills") or a
+/// destination that differs from the source ("PublishProfiles" -> "GraveyardsPublishProfiles").
+/// </summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(BackupSourceConverter))]
+sealed class BackupSource
+{
+    public string? Path { get; set; }
+    public string? As { get; set; }
+}
+
+/// <summary>
+/// Reads a source as either a bare path string or an object with Path and optional As,
+/// so entries that need no renaming stay plain strings.
+/// </summary>
+sealed class BackupSourceConverter : System.Text.Json.Serialization.JsonConverter<BackupSource>
+{
+    public override BackupSource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+            return new BackupSource { Path = reader.GetString() };
+        if (reader.TokenType != JsonTokenType.StartObject)
+            throw new JsonException("A source must be a path string or an object with Path and optional As.");
+
+        var source = new BackupSource();
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject) return source;
+            if (reader.TokenType != JsonTokenType.PropertyName)
+                throw new JsonException("Malformed source object.");
+            var property = reader.GetString();
+            reader.Read();
+            if (string.Equals(property, nameof(BackupSource.Path), StringComparison.OrdinalIgnoreCase))
+                source.Path = reader.GetString();
+            else if (string.Equals(property, nameof(BackupSource.As), StringComparison.OrdinalIgnoreCase))
+                source.As = reader.GetString();
+            else
+                reader.Skip();
+        }
+        throw new JsonException("Malformed source object.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, BackupSource value, JsonSerializerOptions options)
+    {
+        if (value.As is null) writer.WriteStringValue(value.Path);
+        else
+        {
+            writer.WriteStartObject();
+            writer.WriteString(nameof(BackupSource.Path), value.Path);
+            writer.WriteString(nameof(BackupSource.As), value.As);
+            writer.WriteEndObject();
+        }
+    }
 }

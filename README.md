@@ -17,7 +17,17 @@ Edit `src/MachineBackup/appsettings.json`. `Machines` contains named profiles su
 }
 ```
 
-Each source goes into a folder named after its last path segment: `Projects` and `Documents` in this example. Source folders must exist and have distinct names. Sources and the destination must not overlap. Paths must be absolute; environment variables such as `%USERPROFILE%` are expanded at runtime. JSON requires backslashes to be doubled. The sample profiles are examples: adjust them for your PCs before running.
+Each source goes into a folder named after its last path segment: `Projects` and `Documents` in this example. To choose the destination folder name yourself, write the source as an object with `Path` and `As`; plain strings and objects can be mixed in one list:
+
+```json
+"SourcePaths": [
+  "%USERPROFILE%\\Documents",
+  { "Path": "%USERPROFILE%\\.claude\\skills", "As": "skills" },
+  { "Path": "%USERPROFILE%\\.codex\\skills", "As": "codex-skills" }
+]
+```
+
+`As` is needed when two sources share a last path segment (both folders above are named `skills`) or when the backup folder should be named differently from the source. It must be a single folder name, not a path. Source folders must exist, and destination folder names (`As`, or the last path segment) must be distinct. Sources and the destination must not overlap. Paths must be absolute; environment variables such as `%USERPROFILE%` are expanded at runtime. JSON requires backslashes to be doubled. The sample profiles are examples: adjust them for your PCs before running.
 
 ## Run
 
@@ -39,6 +49,8 @@ dotnet run -- lenovo
 ```
 
 To run the Lenovo backup by double-clicking, open `src/MachineBackup/Backup-Lenovo.bat`. For mirror mode, open `src/MachineBackup/Backup-Lenovo-Mirror.bat`; this deletes destination-only files and folders. Both locate the project relative to the batch file and keep the console window open after completion. They require the .NET SDK, just like `dotnet run`. Windows desktop shortcuts can point to these batch files.
+
+The Asus profile has the matching pair `src/MachineBackup/Backup-Asus.bat` and `src/MachineBackup/Backup-Asus-Mirror.bat`. These always pass `--machine asus` explicitly instead of relying on the Windows PC name.
 
 By default, settings are loaded from `appsettings.json` beside the executable, independent of the current working directory. Use `--settings "C:\\path\\appsettings.json"` to select another file. `--help` shows all options.
 
